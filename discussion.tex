@@ -1,0 +1,22 @@
+\section{Discussion}
+\label{disc}
+
+In this section, we discuss briefly, other different distributed settings made possible by our algorithm. The aim is to show the flexibility and generality of our approach while ensuring {\it glrc}.\comment{ We will also talk briefly about the extension to non-convex setting.}
+
+Section~\ref{distr} considered example partitioning where examples are distributed across the nodes. First, it is worth mentioning that, due to the gradient consistency condition, {\it partitioning} is not a necessary constraint; our theory allows examples to be resampled, i.e., each example is allowed to be a part of any number of nodes arbitrarily. For example, to reduce the number of outer iterations, it helps to have more examples in each node.
+
+Second, the theory proposed in section~\ref{distr} holds for feature partitioning also. Suppose, in each node $p$ we restrict ourselves to a subset of features, $J_p\subset \{1,\ldots,d\}$, i.e., include the constraint,
+$w_p \in  \{ w: w(j)=w^r(j) \;\; \forall r\not\in J_p\}$,
+where $w(j)$ denotes the weight of the $j^{th}$ feature. Note that we do not need $\{J_p\}$ to form a partition. This is useful since important features can be included in all the nodes.
+
+{\bf Gradient sub-consistency.} Given $w^r$ and $J_p$ we say that $\fhat_p(w)$ has gradient sub-consistency with $f$ at $w^r$ on $J_p$ if $\frac{\partial f}{\partial w(j)} (w^r) = \frac{\partial \fhat}{\partial w(j)} (w^r) \;\; \forall \; j\in J_p$.
+
+Under the above condition, we can modify the algorithm proposed in Section~\ref{distr} to come up with a feature decomposition algorithm with {\it glrc}.
+
+Several feature decomposition based approaches~\cite{richtarik2013,patriksson1998fp} have been proposed in the literature. The one closest to our method is the work by Patrikkson on a synchronized parallel algorithm~\cite{patriksson1998fp} which extends a generic cost approximation algorithm~\cite{patriksson1998ca} that is similar to our functional approximation. The sub-problems on the partitions are solved in parallel. Although the objective function is not assumed to be convex, the cost approximation is required to satisfy a monotone property, implying that the approximation is convex. The algorithm only has asymptotic linear rate of convergence and it requires the feature partitions to be disjoint. In contrast, our method has {\it glrc} and works even if features overlap in partitions. Moreover, there does not exist any counterpart of our example partitioning based distributed algorithm discussed in section~\ref{distr}.
+
+Our approach can be easily generalized to joint example-feature partitioning as well as non-convex setting. The exact details of all the extensions mentioned above and related experiments are left for future work.
+
+\section{Conclusion}
+To conclude, we have proposed a novel functional approximation based distributed algorithm with provable global linear rate of convergence. The algorithm is general and flexible in the 
+sense of allowing different local approximations at the node level, different algorithms for optimizing the local approximation, early stopping and general data usage in the nodes.

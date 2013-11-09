@@ -1,0 +1,111 @@
+\documentclass{article}
+%\usepackage[accepted]{icml2013}
+\usepackage[accepted]{icml2014}
+\usepackage[algo2e,ruled]{algorithm2e}
+%\usepackage{natbib,booktabs}
+\usepackage{natbib}
+\usepackage{graphicx} % more modern
+\usepackage{hyperref,multirow,float}
+\usepackage{paralist,xspace}
+\usepackage{subfigure}
+\usepackage{amsmath}
+\usepackage{steinmetz}
+
+
+\icmltitlerunning{A functional approximation based distributed learning algorithm}
+
+%
+% If your paper is accepted, change the options for the package
+% aistats2012 as follows:
+%
+%\usepackage[accepted]{aistats2012}
+%
+% This option will print headings for the title of your paper and
+% headings for the authors names, plus a copyright note at the end of
+% the first column of the first page.
+\usepackage{amsmath,amssymb}
+
+\begin{document}
+
+
+% If your paper is accepted and the title of your paper is very long,
+% the style will print as headings an error message. Use the following
+% command to supply a shorter title of your paper so that it can be
+% used as headings.
+%
+
+% If your paper is accepted and the number of authors is large, the
+% style will print as headings an error message. Use the following
+% command to supply a shorter version of the authors names so that
+% they can be used as headings (for example, use only the surnames)
+%
+
+%\runningauthor{Dhruv Mahajan, S. Sundararajan, S. Sathiya Keerthi, L\'{e}on Bottou}
+
+
+\twocolumn[
+\icmltitle
+{A Functional Approximation Based Distributed Learning Algorithm}
+
+\icmlauthor{Dhruv Mahajan}{dhrumaha@microsoft.com}
+\icmladdress{Microsoft Research India,
+            Bangalore, India}
+
+\icmlauthor{S. Sathiya Keerthi}{keerthi@microsoft.com}
+\icmladdress{Cloud and Information Services Lab,
+            Microsoft Corporation, Mountain View, USA}
+
+\icmlauthor{S. Sundararajan}{ssrajan@microsoft.com}
+\icmladdress{Microsoft Research India,
+            Bangalore, India}
+
+\icmlauthor{L\'{e}on Bottou}{leonbo@microsoft.com}
+\icmladdress{Microsoft Research,
+            New York, USA}
+
+
+\vskip 0.3in
+]
+
+\author{Dhruv Mahajan, S. Sundararajan, S. Sathiya Keerthi}
+
+\begin{abstract}
+This paper gives a novel approach to the distributed training of linear classifiers. At each iteration, the nodes minimize approximate objective functions and combine the resulting minimizers to form a descent direction to move. The method is shown to have $O(\log(1/\epsilon))$ time convergence. The method can be viewed as an iterative parameter mixing method. A special instantiation yields a parallel stochastic gradient descent method with strong convergence. When communication times between nodes are large, our method is much faster than the SQM method, which uses distributed computation only for function and gradient calls.
+\end{abstract}
+
+
+%\maketitle
+
+\def\grad{\nabla}
+\def\wtilde{\tilde{w}}
+\def\Cone{{\cal{C}}^1}
+\def\kappap{\kappa^\prime}
+\def\Lhat{\hat{L}}
+\def\fhat{\hat{f}}
+\def\what{\hat{w}}
+\def\dhat{\hat{d}}
+\def\mysgn{\operatorname{sgn}}
+\def\ftilde{\tilde{f}}
+\def\khat{\hat{k}}
+\def\defs{\stackrel{\text{def}}{=}}
+\def\vhat{\hat{v}}
+
+\def\ttilde{\tilde{t}}
+\def\that{\hat{t}}
+\def\tstar{t^\star}
+
+\input{intro}
+\input{convergence}
+\input{distributed}
+\input{experiments}
+\input{discussion}
+\input{appendix_A}
+\input{appendix_B}
+
+
+\bibliography{falda}
+\bibliographystyle{icml2014}
+
+
+
+\end{document}

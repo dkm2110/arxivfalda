@@ -1,0 +1,51 @@
+\section{Convergence of the descent method}
+\label{general}
+
+Let $f\in\Cone$, the class of continuously differentiable functions\footnote{It would be interesting future work to extend all the theory developed in this paper to non-differentiable convex functions, using sub-gradients.}, $f$ be convex, and the gradient $g$ satisfy the following assumptions.
+
+{\bf A1.} $g$ is Lipschitz continuous, i.e., $\exists$ $L>0$ such that
+$\|g(w)-g(\wtilde)\| \le L \|w-\wtilde\| \;\;\; \forall \; w, \wtilde$.
+
+{\bf A2.} $\exists$ $\sigma >0$ such that
+$(g(w)-g(\wtilde))\cdot(w-\wtilde) \ge \sigma \|w-\wtilde\|^2  \;\;\; \forall \; w, \wtilde$.
+
+A1 and A2 are essentially second order conditions: if $f$ happens to be twice continuously differentiable, then $L$ and $\sigma$ can be viewed as upper and lower bounds on the eigenvalues of the Hessian of $f$. A convex function $f$ is said to be $\sigma$- strongly convex if $f(w)-\frac{\sigma}{2} \|w\|^2$ is convex. In machine learning, all convex risk functionals in $\Cone$ having the $L_2$ regularization term, $\frac{\lambda}{2} \|w\|^2$ are $\sigma$- strongly convex with $\sigma=\lambda$. It can be shown~\cite{smola2008} 
+%(see (3.18) there)
+that, if $f$ is $\sigma$-strongly convex, then $f$ satisfies assumption A2.
+
+Let $f^r=f(w^r)$, $g^r=g(w^r)$ and $w^{r+1}=w^r+t d^r$. Consider the following standard line search conditions.
+\begin{eqnarray}
+\mbox{{\small\bf Armijo:}}\; & f^{r+1} \le f^r + \alpha g^r\cdot(w^{r+1}-w^r) \label{ag} \\
+\mbox{{\small\bf Wolfe:}}\;  & g^{r+1}\cdot d^r \ge \beta g^r\cdot d^r \label{wolfe}
+\end{eqnarray}
+where $0<\alpha<\beta<1$.
+
+\begin{algorithm2e}
+\caption{Descent method for $f$\label{GD}}
+Choose $w^0$\;
+\For{$r=0,1 \ldots$}{
+1. Exit if $g^r=0$\;
+2. Choose a direction $d^r$ satisfying (\ref{angle})\;
+3. Do line search to choose $t>0$ so that $w^{r+1}=w^r+td^r$ satisfies the Armijo-Wolfe conditions (\ref{ag}) and (\ref{wolfe})\;
+}
+\end{algorithm2e}
+Let us now consider the general descent method in Algorithm~\ref{GD} for minimizing $f$. The following result shows that the algorithm is well-posed. A proof is given in the appendix.
+
+%Standard results in optimization~\cite{dennis1996} (see Theorem 6.3.2) can be easily modified to show that there always exists an interval of $t$ values over which (\ref{wolfe}) and (\ref{ag}) hold.
+
+{\bf Lemma 1.} Suppose $g^r\cdot d^r<0$.
+Then $\{ t: $ (\ref{ag}) and (\ref{wolfe}) hold for $w^{r+1}=w^r+td^r\} = [t_\beta,t_\alpha]$, where $0<t_\beta<t_\alpha$, and $t_\beta$, $t_\alpha$ are the unique roots of
+\begin{eqnarray}
+g(w^r+t_\beta d^r)\cdot d^r = \beta g^r\cdot d^r, \label{tbeta} \\
+f(w^r+t_\alpha d^r) = f^r + t_\alpha \alpha g^r\cdot d^r, \;\; t_\alpha>0. \label{talpha}
+\end{eqnarray}
+
+%If $\alpha$ is chosen very small, say $\alpha=10^{-4}$ and $\beta$ close to 1, say $0.99$, then this interval becomes large and it is easy to locate a $t$ satisfying the two conditions. (We need to say a bit more here, e.g., give good starting $t$ values and a clean line search algorithm that works and is also efficient. See section~\ref{lsearch} for some ideas for bracketing the minimum in the line search.)
+
+{\bf Theorem 2.} Let $w^\star=\arg\min_w f(w)$ and $f^\star=f(w^\star)$.\footnote{Assumption A2 implies that $w^\star$ is unique.} Then $\{w^r\}\rightarrow w^\star$. Also, we have {\it glrc}, i.e., $\exists$ $\delta$ satisfying $0<\delta<1$ such that
+$(f^{r+1} - f^\star) \le \delta\, (f^r-f^\star) \; \forall \; r\ge 0$,
+and, $f^r-f^\star\le\epsilon$ is reached after at most
+$\frac{\log ((f^0-f^\star)/\epsilon)}{\log(1/\delta)}$
+iterations. An upper bound on $\delta$ is $(1 - 2\alpha(1-\beta)\frac{\sigma^2}{L^2} \cos^2\theta)$.\footnote{The actual rate of convergence is usually a lot better, and it depends much on the method used for choosing $d^r$.}
+
+A proof of Theorem 2 is given in the appendix. If one is interested only in proving convergence, it is easy to establish under the assumptions made; such theory goes back to the classical works of Wolfe~\yrcite{wolfe1969, wolfe1971}. But proving {\it glrc} is harder. There exist proofs for special cases such as the gradient descent method~\cite{boyd2004}. The {\it glrc} result in Wang \& Lin~\yrcite{wang2013} is only applicable to descent methods that are ``close" (see equations ($7$) and ($8$) in~\cite{wang2013}) to the gradient descent method. Though Theorem 2 is not entirely surprising, as far as we know, such a result does not exist in the literature.

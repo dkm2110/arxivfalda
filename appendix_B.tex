@@ -1,0 +1,51 @@
+\def\C{C}
+\def\Ccomp{C^{\rm Comp}}
+\def\Ccomm{C^{\rm Comm}}
+\def\Csqm{C_{\rm SQM}}
+\def\Csvrg{C_{\rm SVRG}}
+\def\Ccompsqm{C^{\rm Comp}_{\rm SQM}}
+\def\Ccommsqm{C^{\rm Comm}_{\rm SQM}}
+\def\Ccompsvrg{C^{\rm Comp}_{\rm SVRG}}
+\def\Ccommsvrg{C^{\rm Comm}_{\rm SVRG}}
+\def\Tout{T^{\rm outer}}
+\def\Tin{T^{\rm inner}}
+\def\Toutsqm{T^{\rm outer}_{\rm SQM}}
+\def\Toutsvrg{T^{\rm outer}_{\rm SVRG}}
+
+\section{Appendix B: Complexity analysis}
+\label{proofs}
+Let us use the notations of section~\ref{distr} given around (\ref{comm}). We define the overall cost of any distributed algorithm as
+\begin{eqnarray}
+[(c_1\frac{nz}{p} + c_2m)\Tin + c_3 \gamma m \log_2 P]\Tout,
+\label{costanal}
+\end{eqnarray}
+where $\Tout$ is the number of outer iterations, $\Tin$ is the number of inner iterations at each node before communication happens and  $c_1$ and $c_2$ denote the number of passes over the data and $m$-dimensional dot products per inner iteration respectively. For communication, we assume an AllReduce binary tree as described in Agarwal et al~\yrcite{agarwal2011} without pipelining. As a result, we get a multiplicative factor of $log_2 P$ in our cost. $\gamma$ is the ratio of computation to communication speed. For sparse datasets $\gamma$ is very large. $c_3$ is the number of $m$-dimensional vectors (gradients, Hessian-vector computations etc.) we need to communicate.
+
+\begin{table}[ht]
+\caption{Value of cost parameters} % title of Table
+\centering % used for centering table
+\begin{tabular}{c c c c c c c} % centered columns (4 columns)
+\hline\hline %inserts double horizontal lines
+Method & $c_1$ & $c_2$ & $c_3$ & $\Tin$ \\ %[0.5ex] % inserts table
+%heading
+\hline
+SQM & $2$ & $\approx 5-10$ & $1$ & $1$ \\
+Our & $1.2$ & $0.2$ & $2$ & $\hat{k}$ \\
+\hline
+\end{tabular}
+\label{tab:params}
+\end{table}
+
+The values of different parameters for $SQM$ implemented using TRON and our approach implemented using SVRG are given in Table~\ref{tab:params}. $\Toutsqm$ is the number of overall conjugate gradient iterations plus gradient computations.
+
+Since dense dot products are extremely fast and $c_3$ is a small number for both the approaches, we ignore it for simplicity. Now for our method to have lesser cost than $SQM$, we can use (\ref{costanal}) to get the condition,
+%we need $\Csvrg \leq \Csqm$. Plugging in the parameter values and rearranging,
+\begin{equation}
+(1.2\hat{k}\Toutsvrg - 2\Toutsqm)\frac{nz}{P}  \leq  (\Toutsqm - 2 \Toutsvrg) \gamma m \log_2 P
+\end{equation}
+Ignoring $\Toutsqm$ on the left side of this inequality and rearranging, we get the looser condition,
+\begin{equation}
+\frac{nz}{m}  \leq  \frac{\gamma P\log_2 P}{\hat{k}} \frac{1}{1.2}(\frac{\Toutsqm}{\Toutsvrg} - 2 )
+\end{equation}
+Assuming $\Toutsqm > 3.2\Toutsvrg$, we arrive at the final condition in equation~(\ref{comm}). 
+%Note that in our experiments (section~\ref{distr}), the savings we get in the outer iterations is typically more than the factor $3.2$.

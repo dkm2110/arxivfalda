@@ -1,0 +1,110 @@
+\section{Distributed training}
+\label{distr}
+
+Let $\{x_i,y_i\}$ be the training set associated with a binary classification problem ($y_i\in\{1,-1\}$). Consider a linear classification model, $y=\mysgn(w^Tx)$. Let $l(w\cdot x_i,y_i)$ be a continuously differentiable loss function that has Lipschitz continuous gradient. This allows us to consider loss functions such as least squares, logistic loss and squared hinge loss. Hinge loss is not covered by our theory since it is non-differentiable.
+
+Suppose the data is distributed in $P$ nodes. Let: $I_p$ be the set of indices $i$ such that $(x_i,y_i)$ sits in the $p$-th node; $L_p(w) = \sum_{i\in I_p} l(w;x_i,y_i)$ be the total loss associated with node $p$; and, $L(w)=\sum_p L_p(w)$ be the total loss over all nodes. Our aim is to to minimize the regularized risk functional $f(w)$ given by
+\begin{equation}
+f(w) = \frac{\lambda}{2} \|w\|^2 + L(w) = \frac{\lambda}{2} \|w\|^2 + \sum_p L_p(w)
+\label{risk}
+\end{equation}
+where $\lambda>0$ is the regularization constant. It is easy to check that $g=\grad f$ is Lipschitz continuous.
+
+Our distributed method is based on the descent method in Algorithm~\ref{GD}. We use a master-slave architecture.\footnote{An {\it AllReduce} arrangement of nodes~\cite{agarwal2011} may also be used.} Let the examples be partitioned over $P$ slave nodes. Distributed computing is used to compute the gradient $g^r$ as well as the direction $d^r$.  In the $r$-th iteration, let us say that the master has the current $w^r$ and gradient $g^r$. One can communicate these to all $P$ (slave) nodes. The direction $d^r$ is formed as follows. Each node $p$ constructs an approximation of $f(w)$ using only information that is available in that node, call it $\fhat_p(w)$, and (approximately) optimizes it (starting from $w^r$) to get the point $w_p$. Let $d_p=w_p-w^r$. Then $d^r$ is chosen to be any convex combination of $d_p\;\forall p$.
+
+Our method offers great flexibility in choosing $\fhat_p$ and the method used to optimize it. We only require $\fhat_p$ to satisfy the following.
+
+{\bf A3.} $\fhat_p$ is $\sigma$-strongly convex, has Lipschitz continuous gradient and satisfies {\it gradient consistency at $w^r$:} $\grad\fhat_p(w^r)=g^r$.
+
+Below we give ways of forming $\fhat_p$. The $\sigma$-strongly convex condition is easily taken care of by making sure that the $L_2$ regularizer is a part of $\fhat_p$. This condition implies that
+\begin{equation}
+\fhat_p(w_p) \ge \fhat_p(w^r) + \grad\fhat_p(w^r)\cdot (w_p-w^r) + \frac{\sigma}{2} \|w_p-w^r\|^2
+\label{fhatsig}
+\end{equation}
+The gradient consistency condition is motivated by the need to satisfy the angle condition (\ref{angle}). Since $w_p$ is obtained by starting from $w^r$ and optimizing $\fhat_p$, it is reasonable to assume that $\fhat_p(w_p)<\fhat_p(w^r)$. Using these in (\ref{fhatsig}) gives $-g^r\cdot d_p > 0$. Since $d^r$ is a convex combination of the $d_p$ it follows that $-g^r\cdot d^r > 0$. Later we will formalize this to yield (\ref{angle}) precisely.
+
+A natural way of choosing the approximating functional $\fhat_p$ is
+\begin{equation}
+\fhat_p(w) = \frac{\lambda}{2} \|w\|^2 + L_p(w) +\Lhat_p(w)
+\label{riskapp}
+\end{equation}
+where $\Lhat_p(w)$ is an approximation of $L(w)-L_p(w)=\sum_{q\not= p} L_q(w)$, but one that does not explicitly require any examples outside node $p$. To satisfy A3 we only need $\Lhat_p$ to have Lipschitz continuous gradient; all other conditions are directly satisfied. A simple instance of $\Lhat_p$ is a linear function constructed using the gradient at $w^r$:
+\begin{equation}
+\Lhat_p(w) = (g^r - \lambda w^r-\grad L_p(w^r))\cdot(w-w^r)
+\label{linapp}
+\end{equation}
+(The zeroth order term needed to get $f(w^r)=\fhat(w^r)$ is omitted because it is a constant that plays no role in the optimization.) There are other ways of forming an approximation $\Lhat_p(w)$. For example, one could add a second order term, $\frac{1}{2}(w-w^r)\cdot H(w-w^r)$ to the approximation in (\ref{linapp}) where $H$ is a positive semi-definite matrix; for $H$ we can use a diagonal approximation or keep a limited history of gradients and form a BFGS approximation of $L-L_p$.
+
+%It is easy to check that the $\fhat_p$ given by (\ref{riskapp}) and (\ref{linapp}) satisfies the above conditions. It is worth noting that, due to the regularization term $\frac{\lambda}{2} \|w\|^2$, $f$ and $\fhat_p$ are $\sigma$-strongly convex, with $\sigma=\lambda$.
+
+{\bf Convergence Theory.} The distributed method described above is an instance of Algorithm~\ref{GD} and so Theorem 2 can be used. However, obtaining $d^r$ requires the determination of the $w_p$ via minimizing $\fhat_p$. As already mentioned, it is not necessary for $w_p$ to be the minimizer of $\fhat_p$; we only need to find $w_p$ such that the direction $d_p=w_p-w^r$ satisfies (\ref{angle}). The angle $\theta$ needs to be chosen right. Let us discuss this first. Let $\what_p^\star$ be the minimizer of $\fhat_p$. It can be shown (see appendix A) that $\phase{\what_p^\star-w^r,-g^r} \le \cos^{-1}\frac{\sigma}{L}$. To allow for $w_p$ being an approximation of $\what_p^\star$, we choose $\theta$ such that
+\begin{equation}
+\frac{\pi}{2} > \theta > \cos^{-1} \frac{\sigma}{L}
+\label{thetadef}
+\end{equation}
+The following result shows that if an optimizer with {\it glrc} is used to minimize $\fhat_p$, then, only a constant number of iterations is needed to satisfy the sufficient angle of descent condition.
+
+{\bf Lemma 3.} Assume $g^r\not=0$. Suppose we minimize $\fhat_p$ using an optimizer ${\cal M}$ that starts from $v^0=w^r$ and generates a sequence $\{v^k\}$ having {\it glrc}, i.e.,
+$\fhat_p(v^{k+1}) - \fhat_p^\star \le \delta (\fhat_p(v^k) - \fhat_p^\star)$,
+where $\fhat_p^\star = \fhat_p(\what_p^\star)$. Then, there exists $\khat$ (which depends only on $\sigma$ and $L$) such that
+$\phase{-g^r,v^k-w^r} \le \theta \;\; \forall k\ge \khat$.
+
+Lemma 3 can be combined with Theorem 2 to yield the following convergence theorem.
+
+{\bf Theorem 4.} Suppose $\theta$ satisfies (\ref{thetadef}), ${\cal M}$ is as in Lemma 3 and, in each iteration $r$ and for each $p$, $\khat$ or more iterations of ${\cal M}$ are applied to minimize $\fhat_p$ (starting from $w^r$) and get $w_p$. Then the distributed method converges to a point $w$ satisfying $f(w)-f(w^\star)\le\epsilon$ in $O(\log(1/\epsilon))$ time.
+
+%{\bf Leon's comments to go here.} Proofs of the above results are given in appendix A. The bound on rate of convergence derived there should not be interpreted as the actual rates associated with our method. etc.
+
+{\bf Related work.}
+As already mentioned in section~\ref{intro} our distributed method can be viewed as an IPM method, but one which has strong convergence properties.
+
+The ADMM method~\cite{Boyd2011}, like our method, solves approximate problems in the nodes and iteratively reaches the full batch solution. But it has the following disadvantages: (a) it does not have {\it glrc}; (b) the approximation problems are dictated by the ADMM formulation and so there is little flexibility; (c) the approximation problems need to be solved precisely; and (d) its efficiency is sensitive to the choice of the penalty parameter which is problem dependent.
+
+{\bf Practical implementation.} Going with the practice in numerical optimization, we replace (\ref{angle}) by the condition, $-g^r\cdot d^r > 0$ and use $\alpha=10^{-4}$, $\beta=0.9$ in (\ref{ag}) and (\ref{wolfe}). We terminate Algorithm~\ref{GD} when $\|g^r\|\le \epsilon_g\|g^0\|$ is satisfied at some $r$. Let us take line search next. On $w=w^r+t d^r$, the loss has the form $l(z_i+te_i,y_i)$ where $z_i=w^r\cdot x_i$ and $e_i=d^r\cdot x_i$. Once we have computed $z_i\;\forall i$ and $e_i\;\forall i$, the distributed computation of $f(w^r+t d^r)$ and its derivative with respect to $t$ is cheap as it does not involve any computation involving the data, $\{x_i\}$. Thus many $t$ values can be explored cheaply. Since $d^r$ is determined by approximate optimization, $t=1$ is expected to give a decent starting point. We first identify an interval $[t_1,t_2]\subset [t_\beta,t_\alpha]$ (see Lemma 1) by starting from $t=1$ and doing forward and backward stepping. Then we check if $t_1$ or $t_2$ is the minimizer of $f(w^r+t d^r)$ on $[t_1,t_2]$; if not, we do several bracketing steps in $(t_1,t_2)$ to locate the minimizer approximately. Finally, when using method ${\cal M}$, we terminate it after a fixed number of steps, $\khat$. Algorithm 2 gives all the steps of the distributed method while also mentioning the distributed communications and computations involved.
+
+\begin{algorithm2e}
+\caption{Distributed method for minimizing $f$
+{\it com:} communication; {\it cmp:} = computation; {\it agg:} aggregation}
+Choose $w^0$\;
+\For{$r=0,1 \ldots$}{
+1. Compute $g^r$ ({\it com}: $w^r$; {\it cmp:} Two passes over data; {\it agg:} $g^r$); By-product: $\{z_i=w^r\cdot x_i\}$\;
+2. Exit if $\|g^r\| \le \epsilon_g \|g^0\|$\;
+3. \For{$p=1,\ldots,P$ (in parallel)}{
+4.   Set $v^0=w^r$\;
+5.   \For{$k=0,1,\ldots,\khat$}{
+        6. Find $v^{k+1}$ using one iteration of ${\cal M}$\;
+     }
+     7. Set $w_p=v^{\khat+1}$\;
+   }
+8. Set $d^r$ as any convex combination of $\{w_p\}$ ({\it agg:} $w_p$)\;
+9. Compute $\{e_i=d^r\cdot x_i\}$ ({\it comm:} $d^r$; {\it cmp:} One pass over data)\;
+10. Do line search to find $t$ (for each $t$: {\it comm:} $t$; {\it cmp:} $l$ and $\partial l/\partial t$ {\it agg:} $f(w^r+t d^r)$ and its derivative wrt $t$)\;
+11. Set $w^{r+1} = w^r+t d^r$\;
+}
+\end{algorithm2e}
+
+{\bf Choices for ${\cal M}$.}
+There are many good methods having (deterministic) {\it glrc}: L-BFGS, TRON~\cite{lin2008}, Primal coordinate descent~\cite{chang2008}, etc. One could also use methods with {\it glrc} in the expectation sense (in which case, convergence in Theorem 4 should also be interpreted in some probabilistic sense; see Mahajan et. al NIPS workshop paper for details). Recently suggested variants of SGD~\cite{leroux2012,johnson2013} are methods with such convergence. This particular instantiation of our distributed method yields a parallel SGD method with strong convergence properties, which, as already indicated in section~\ref{intro} (see Q3), fills a gap in the literature. In section~\ref{expts} we conduct experiments using TRON and the SVRG method in Johnson \& Zhang (2013).
+
+{\bf{Connection with SVRG. }}
+The connection of our method with the recently proposed SVRG method~\citep{johnson2013} is interesting. To show this, let us take the $\fhat_p$ in~(\ref{linapp}). Let $n_p=|I_p|$ be the number of examples in node $p$. Define $\psi_i(w) = n_p l(w\cdot x_i,y_i) + \frac{\lambda}{2} \|w\|^2$. It is easy to check that
+\begin{equation}
+\grad\fhat_p(w) = \frac{1}{n_p} \sum_{i\in I_p} ( \grad\psi_i(w) - \grad\psi_i(w^r) + g^r)
+\label{psigrad}
+\end{equation}
+Thus, plain SGD updates applied to $\fhat_p$ has the form
+\begin{equation}
+w = w - \eta ( \grad\psi_i(w) - \grad\psi_i(w^r) + g^r)
+\label{svrg}
+\end{equation}
+which is precisely the update in SVRG. In particular, the single node ($P=1$) implementation of our method using plain SGD updates for optimizing $\fhat_p$ is very close to the SVRG method.\footnote{Note the subtle point that applying SVRG method on $\fhat_p$ is different from doing (\ref{svrg}), which corresponds to plain SGD. It is the former that assures {\it glrc} (in expectation).} While Johnson \& Zhang~\yrcite{johnson2013} motivate the update in terms of variance reduction, we derive it from a functional approximation viewpoint.
+
+{\bf Computation-Communication tradeoff.}
+Compared to the SQM method (see section~\ref{intro}), our method does a lot more computation (optimize $\fhat_p$) in each node. On the other hand our method reaches a good solution using a much smaller number of outer iterations. Clearly, our method will be attractive for problems with high communication costs, e.g., problems with a large feature dimension. For a given distributed computing environment and specific implementation choices, it is easy to do a rough analysis to understand the conditions in which our method will be more efficient than SQM. Consider a distributed grid of nodes in an {\it AllReduce} tree. Let us use TRON for implementing SQM and SVRG for ${\cal M}$ in our method. Assuming that $T_{\rm SVRG}^{\rm outer}<3T_{\rm SQM}^{outer}$ (where $T_{\rm SVRG}^{\rm outer}$ and $T_{\rm SQM}^{outer}$ are the number of outer iterations required by SQM and our method with SVRG), we can do a rough analysis of the costs of SQM and our method (see appendix B for details) to show that our method will be faster when the following condition is satisfied.
+\begin{equation}
+\frac{nz}{m} \ll \frac{\gamma P \log_2 P}{2} \frac{T_{\rm SQM}^{\rm outer}}{\khat}
+\label{comm}
+\end{equation}
+where: $nz$ is the number of nonzero elements in the data, i.e., $\{x_i\}$; $m$ is the feature dimension; $\gamma$ is the relative cost of communication to computation (e.g. $100-1000$); $P$ is the number of nodes; and $\khat$ is the number of inner iterations of our method.
+
+
