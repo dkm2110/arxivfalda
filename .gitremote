@@ -1,0 +1,4 @@
+[remote "github"]
+        url = git://github.com/dkm2110/arxivfalda
+        fetch = +refs/heads/*:refs/remotes/github/*
+        pushurl = git@github.com:dkm2110/arxivfalda
